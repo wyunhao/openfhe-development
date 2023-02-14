@@ -1,7 +1,7 @@
 //==================================================================================
 // BSD 2-Clause License
 //
-// Copyright (c) 2014-2022, NJIT, Duality Technologies Inc. and other contributors
+// Copyright (c) 2014-2023, NJIT, Duality Technologies Inc. and other contributors
 //
 // All rights reserved.
 //
@@ -28,8 +28,14 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==================================================================================
+#ifndef __CRYPTOCONTEXTFACTORY_IMPL_H__
+#define __CRYPTOCONTEXTFACTORY_IMPL_H__
+
+// ATTENTION: this file contains implementations of the functions
+//            declared in pke/include/cryptocontextfactory.h and
+//            MUST be included in the end of pke/include/cryptocontextfactory.h ONLY
+//            and nowhere else
 #include "cryptocontext.h"
-#include "cryptocontextfactory.h"
 #include "schemebase/base-scheme.h"
 #include "scheme/scheme-id.h"
 
@@ -98,11 +104,9 @@ const std::vector<CryptoContext<T>>& CryptoContextFactory<T>::GetAllContexts() {
     return AllContexts;
 }
 
-}  // namespace lbcrypto
-
-// the code below is from pke/lib/cryptocontextfactory-impl.cpp
-namespace lbcrypto {
 
 template class CryptoContextFactory<DCRTPoly>;
 
-}
+}  // namespace lbcrypto
+
+#endif // __CRYPTOCONTEXTFACTORY_IMPL_H__

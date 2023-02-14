@@ -49,7 +49,6 @@ namespace lbcrypto {
  *
  * A class to aid in referring to the crypto context that an object belongs to
  */
-template <typename Element>
 class CryptoObject {
 protected:
     CryptoContext<Element> context;  // crypto context belongs to the tag used to find the evaluation key needed
@@ -57,6 +56,7 @@ protected:
     std::string keyTag;
 
 public:
+    template <typename Element>
     explicit CryptoObject(CryptoContext<Element> cc = nullptr, const std::string& tag = "")
         : context(cc), keyTag(tag) {}
 
@@ -88,10 +88,12 @@ public:
         return context.get() == rhs.context.get() && keyTag == rhs.keyTag;
     }
 
+    template <typename Element>
     CryptoContext<Element> GetCryptoContext() const {
         return context;
     }
 
+    template <typename Element>
     const std::shared_ptr<CryptoParametersBase<Element>> GetCryptoParameters() const;
 
     const EncodingParams GetEncodingParameters() const;

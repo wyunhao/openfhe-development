@@ -1,7 +1,7 @@
 //==================================================================================
 // BSD 2-Clause License
 //
-// Copyright (c) 2014-2022, NJIT, Duality Technologies Inc. and other contributors
+// Copyright (c) 2014-2023, NJIT, Duality Technologies Inc. and other contributors
 //
 // All rights reserved.
 //
@@ -28,13 +28,13 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==================================================================================
+#ifndef __CRYPTOCONTEXT_IMPL_H__
+#define __CRYPTOCONTEXT_IMPL_H__
 
-/*
-  Control for encryption operations
- */
-
-#include "cryptocontext.h"
-
+// ATTENTION: this file contains implementations of the functions
+//            declared in pke/include/cryptocontext.h and
+//            MUST be included in the end of pke/include/cryptocontext.h ONLY
+//            and nowhere else
 #include "key/privatekey.h"
 #include "key/publickey.h"
 #include "math/chebyshev.h"
@@ -659,7 +659,7 @@ Ciphertext<Element> CryptoContextImpl<Element>::EvalBootstrap(ConstCiphertext<El
 namespace lbcrypto {
 
 template <>
-Plaintext CryptoContextImpl<DCRTPoly>::GetPlaintextForDecrypt(PlaintextEncodings pte, std::shared_ptr<ParmType> evp,
+inline Plaintext CryptoContextImpl<DCRTPoly>::GetPlaintextForDecrypt(PlaintextEncodings pte, std::shared_ptr<ParmType> evp,
                                                               EncodingParams ep) {
     if ((pte == CKKS_PACKED_ENCODING) && (evp->GetParams().size() > 1)) {
         auto vp = std::make_shared<typename Poly::Params>(evp->GetCyclotomicOrder(), ep->GetPlaintextModulus(), 1);
@@ -673,7 +673,7 @@ Plaintext CryptoContextImpl<DCRTPoly>::GetPlaintextForDecrypt(PlaintextEncodings
 }
 
 template <>
-DecryptResult CryptoContextImpl<DCRTPoly>::Decrypt(ConstCiphertext<DCRTPoly> ciphertext,
+inline DecryptResult CryptoContextImpl<DCRTPoly>::Decrypt(ConstCiphertext<DCRTPoly> ciphertext,
                                                    const PrivateKey<DCRTPoly> privateKey, Plaintext* plaintext) {
     if (ciphertext == nullptr)
         OPENFHE_THROW(config_error, "ciphertext passed to Decrypt is empty");
@@ -725,7 +725,7 @@ DecryptResult CryptoContextImpl<DCRTPoly>::Decrypt(ConstCiphertext<DCRTPoly> cip
 }
 
 template <>
-DecryptResult CryptoContextImpl<DCRTPoly>::MultipartyDecryptFusion(
+inline DecryptResult CryptoContextImpl<DCRTPoly>::MultipartyDecryptFusion(
     const std::vector<Ciphertext<DCRTPoly>>& partialCiphertextVec, Plaintext* plaintext) const {
     DecryptResult result;
 
@@ -779,7 +779,7 @@ DecryptResult CryptoContextImpl<DCRTPoly>::MultipartyDecryptFusion(
 
 // Function for sharing and recovery of secret for Threshold FHE with aborts
 template <>
-std::unordered_map<uint32_t, DCRTPoly> CryptoContextImpl<DCRTPoly>::ShareKeys(const PrivateKey<DCRTPoly>& sk, usint N,
+inline std::unordered_map<uint32_t, DCRTPoly> CryptoContextImpl<DCRTPoly>::ShareKeys(const PrivateKey<DCRTPoly>& sk, usint N,
                                                                               usint threshold, usint index,
                                                                               const std::string& shareType) const {
     // conditions on N and threshold for security with aborts
@@ -888,7 +888,7 @@ std::unordered_map<uint32_t, DCRTPoly> CryptoContextImpl<DCRTPoly>::ShareKeys(co
 
 //**********************************************************************************
 template <>
-void CryptoContextImpl<DCRTPoly>::RecoverSharedKey(PrivateKey<DCRTPoly>& sk,
+inline void CryptoContextImpl<DCRTPoly>::RecoverSharedKey(PrivateKey<DCRTPoly>& sk,
                                                    std::unordered_map<uint32_t, DCRTPoly>& sk_shares, usint N,
                                                    usint threshold, const std::string& shareType) const {
     if (!sk)
@@ -1040,6 +1040,6 @@ void CryptoContextImpl<DCRTPoly>::RecoverSharedKey(PrivateKey<DCRTPoly>& sk,
     }
 }
 
-template class CryptoContextImpl<DCRTPoly>;
-
 }  // namespace lbcrypto
+
+#endif // __CRYPTOCONTEXT_IMPL_H__

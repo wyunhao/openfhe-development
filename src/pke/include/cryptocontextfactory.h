@@ -79,4 +79,6 @@ public:
 };
 }  // namespace lbcrypto
 
+#include "cryptocontextfactory-impl.h"
+
 #endif
