@@ -48,22 +48,22 @@
 namespace lbcrypto {
 template <class Element>
 class KeyPair;
-
+template <class Element>
+class SchemeBase;
 /**
  * @brief Abstract interface for encryption algorithm
  * @tparam Element a ring element.
  */
 template <class Element>
 class PKEBase {
+    friend class SchemeBase<Element>;
     using ParmType = typename Element::Params;
     using IntType  = typename Element::Integer;
     using DugType  = typename Element::DugType;
     using DggType  = typename Element::DggType;
     using TugType  = typename Element::TugType;
 
-public:
-    virtual ~PKEBase() {}
-
+protected:
     /**
    * Function to generate public and private keys
    *
@@ -71,7 +71,10 @@ public:
    * @param &privateKey private key used for decryption.
    * @return function ran correctly.
    */
-    virtual KeyPair<Element> KeyGen(CryptoContext<Element> cc, bool makeSparse);
+    virtual KeyPair<Element> KeyGenInternal(CryptoContext<Element> cc, bool makeSparse);
+
+public:
+    virtual ~PKEBase() {}
 
     //  virtual KeyPair<Element> KeyGen(CryptoContext<Element> cc,
     //                                    bool makeSparse,

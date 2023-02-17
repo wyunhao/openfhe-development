@@ -39,6 +39,9 @@
 #include "schemebase/base-scheme.h"
 #include "scheme/scheme-id.h"
 
+#include <memory>
+#include <vector>
+
 namespace lbcrypto {
 
 template <typename Element>
@@ -56,7 +59,7 @@ int CryptoContextFactory<Element>::GetContextCount() {
 
 template <typename Element>
 CryptoContext<Element> CryptoContextFactory<Element>::FindContext(std::shared_ptr<CryptoParametersBase<Element>> params,
-    std::shared_ptr<SchemeBase<Element>> scheme) {
+                                                                  std::shared_ptr<SchemeBase<Element>> scheme) {
     for (CryptoContext<Element> cc : CryptoContextFactory<Element>::AllContexts) {
         if (*cc->GetScheme().get() == *scheme.get() && *cc->GetCryptoParameters().get() == *params.get()) {
             if (cc->GetEncodingParams()->GetPlaintextRootOfUnity() != 0) {
@@ -104,9 +107,6 @@ const std::vector<CryptoContext<T>>& CryptoContextFactory<T>::GetAllContexts() {
     return AllContexts;
 }
 
-
-template class CryptoContextFactory<DCRTPoly>;
-
 }  // namespace lbcrypto
 
-#endif // __CRYPTOCONTEXTFACTORY_IMPL_H__
+#endif  // __CRYPTOCONTEXTFACTORY_IMPL_H__

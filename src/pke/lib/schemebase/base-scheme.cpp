@@ -36,15 +36,16 @@
 
 // the code below is from base-scheme-impl.cpp
 namespace lbcrypto {
-template <typename Element>
-KeyPair<Element> SchemeBase<Element>::KeyGen(CryptoContext<Element> cc, bool makeSparse) {
-    if (m_PKE) {
-        auto kp = m_PKE->KeyGen(cc, makeSparse);
-        kp.publicKey->SetKeyTag(kp.secretKey->GetKeyTag());
-        return kp;
-    }
-    OPENFHE_THROW(config_error, "KeyGen operation has not been enabled");
-}
+
+// template <typename Element>
+// KeyPair<Element> SchemeBase<Element>::KeyGen(CryptoContext<Element> cc, bool makeSparse) {
+//     if (m_PKE) {
+//         auto kp = m_PKE->KeyGenInternal(cc, makeSparse);
+//         kp.publicKey->SetKeyTag(kp.secretKey->GetKeyTag());
+//         return kp;
+//     }
+//     OPENFHE_THROW(config_error, "KeyGen operation has not been enabled");
+// }
 
 template <typename Element>
 EvalKey<Element> SchemeBase<Element>::KeySwitchGen(const PrivateKey<Element> oldPrivateKey,

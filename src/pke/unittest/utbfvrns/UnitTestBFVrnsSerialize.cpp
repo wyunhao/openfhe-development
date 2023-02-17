@@ -35,6 +35,7 @@
 #include "scheme/bfvrns/bfvrns-ser.h"
 #include "scheme/bfvrns/cryptocontext-bfvrns.h"
 #include "gen-cryptocontext.h"
+#include "cryptoobject.h"
 
 using namespace lbcrypto;
 

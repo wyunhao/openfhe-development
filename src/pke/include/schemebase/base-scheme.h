@@ -43,6 +43,8 @@
 #include "schemebase/base-pre.h"
 #include "ciphertext.h"
 
+#include "key/keypair.h"
+
 #include "utils/exception.h"
 #include "utils/caller_info.h"
 
@@ -183,7 +185,14 @@ public:
     // PKE WRAPPER
     /////////////////////////////////////////
 
-    virtual KeyPair<Element> KeyGen(CryptoContext<Element> cc, bool makeSparse);
+    KeyPair<Element> KeyGen(CryptoContext<Element> cc, bool makeSparse) {
+        if (m_PKE) {
+            auto kp = m_PKE->KeyGenInternal(cc, makeSparse);
+            kp.publicKey->SetKeyTag(kp.secretKey->GetKeyTag());
+            return kp;
+        }
+        OPENFHE_THROW(config_error, "KeyGen operation has not been enabled");
+    }
 
     virtual Ciphertext<Element> Encrypt(const Element& plaintext, const PrivateKey<Element> privateKey) const {
         if (m_PKE) {

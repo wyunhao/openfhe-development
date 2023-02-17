@@ -35,7 +35,6 @@
 #include "cryptocontext-fwd.h"
 #include "encoding/encodingparams.h"
 #include "schemebase/base-cryptoparameters.h"
-#include "cryptocontextfactory.h"
 
 #include <algorithm>
 #include <memory>
@@ -49,14 +48,16 @@ namespace lbcrypto {
  *
  * A class to aid in referring to the crypto context that an object belongs to
  */
+template <typename Element>
 class CryptoObject {
 protected:
     CryptoContext<Element> context;  // crypto context belongs to the tag used to find the evaluation key needed
                                      // for SHE/FHE operations
     std::string keyTag;
 
+    void SetFullContextAfterDeserialization(const CryptoContext<Element> context);
+
 public:
-    template <typename Element>
     explicit CryptoObject(CryptoContext<Element> cc = nullptr, const std::string& tag = "")
         : context(cc), keyTag(tag) {}
 
@@ -88,12 +89,10 @@ public:
         return context.get() == rhs.context.get() && keyTag == rhs.keyTag;
     }
 
-    template <typename Element>
     CryptoContext<Element> GetCryptoContext() const {
         return context;
     }
 
-    template <typename Element>
     const std::shared_ptr<CryptoParametersBase<Element>> GetCryptoParameters() const;
 
     const EncodingParams GetEncodingParameters() const;
@@ -121,7 +120,7 @@ public:
         ar(::cereal::make_nvp("cc", context));
         ar(::cereal::make_nvp("kt", keyTag));
 
-        context = CryptoContextFactory<Element>::GetFullContextByDeserializedContext(context);
+        SetFullContextAfterDeserialization(context);
     }
 
     std::string SerializedObjectName() const {
