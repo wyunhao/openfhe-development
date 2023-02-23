@@ -50,6 +50,7 @@
 
 #include "utils/caller_info.h"
 #include "utils/serial.h"
+#include "utils/type_name.h"
 
 #include <functional>
 #include <map>
@@ -125,10 +126,12 @@ class CryptoContextImpl : public Serializable {
                 elemParamsPtr = cryptoParams->GetElementParams();
             }
             // Check if plaintext has got enough slots for data (value)
-            usint ringDim = elemParamsPtr->GetRingDimension();
+            usint ringDim    = elemParamsPtr->GetRingDimension();
             size_t valueSize = value.size();
             if (valueSize > ringDim / 2) {
-                OPENFHE_THROW(config_error, "The size [" + std::to_string(valueSize) + "] of the vector with values should not be greater than ringDim/2 [" + std::to_string(ringDim / 2) + "] if the scheme is CKKS");
+                OPENFHE_THROW(config_error, "The size [" + std::to_string(valueSize) +
+                                                "] of the vector with values should not be greater than ringDim/2 [" +
+                                                std::to_string(ringDim / 2) + "] if the scheme is CKKS");
             }
             // TODO (dsuponit): we should call a version of MakePlaintext instead of calling Plaintext() directly here
             p = Plaintext(std::make_shared<CKKSPackedEncoding>(elemParamsPtr, this->GetEncodingParams(), value,
@@ -136,10 +139,12 @@ class CryptoContextImpl : public Serializable {
         }
         else {
             // Check if plaintext has got enough slots for data (value)
-            usint ringDim = params->GetRingDimension();
+            usint ringDim    = params->GetRingDimension();
             size_t valueSize = value.size();
             if (valueSize > ringDim / 2) {
-                OPENFHE_THROW(config_error, "The size [" + std::to_string(valueSize) + "] of the vector with values should not be greater than ringDim/2 [" + std::to_string(ringDim / 2) + "] if the scheme is CKKS");
+                OPENFHE_THROW(config_error, "The size [" + std::to_string(valueSize) +
+                                                "] of the vector with values should not be greater than ringDim/2 [" +
+                                                std::to_string(ringDim / 2) + "] if the scheme is CKKS");
             }
             // TODO (dsuponit): we should call a version of MakePlaintext instead of calling Plaintext() directly here
             p = Plaintext(std::make_shared<CKKSPackedEncoding>(params, this->GetEncodingParams(), value, noiseScaleDeg,
@@ -163,28 +168,28 @@ class CryptoContextImpl : public Serializable {
     * @return plaintext
     */
     Plaintext MakePlaintext(const PlaintextEncodings encoding, const std::vector<int64_t>& value, size_t depth,
-        uint32_t level) const {
+                            uint32_t level) const {
         const auto cryptoParams = std::dynamic_pointer_cast<CryptoParametersRNS>(GetCryptoParameters());
         Plaintext p;
         if (getSchemeId() == SCHEME::BGVRNS_SCHEME && (cryptoParams->GetScalingTechnique() == FLEXIBLEAUTO ||
-            cryptoParams->GetScalingTechnique() == FLEXIBLEAUTOEXT)) {
+                                                       cryptoParams->GetScalingTechnique() == FLEXIBLEAUTOEXT)) {
             NativeInteger scf;
             if (cryptoParams->GetScalingTechnique() == FLEXIBLEAUTOEXT && level == 0) {
                 scf = cryptoParams->GetScalingFactorIntBig(level);
-                p = PlaintextFactory::MakePlaintext(value, encoding, this->GetElementParams(),
-                    this->GetEncodingParams(), getSchemeId(), 1, level, scf);
+                p   = PlaintextFactory::MakePlaintext(value, encoding, this->GetElementParams(),
+                                                      this->GetEncodingParams(), getSchemeId(), 1, level, scf);
                 p->SetNoiseScaleDeg(2);
             }
             else {
                 scf = cryptoParams->GetScalingFactorInt(level);
-                p = PlaintextFactory::MakePlaintext(value, encoding, this->GetElementParams(),
-                    this->GetEncodingParams(), getSchemeId(), depth, level, scf);
+                p   = PlaintextFactory::MakePlaintext(value, encoding, this->GetElementParams(),
+                                                      this->GetEncodingParams(), getSchemeId(), depth, level, scf);
             }
         }
         else {
             auto elementParams = this->GetElementParams();
             p = PlaintextFactory::MakePlaintext(value, encoding, elementParams, this->GetEncodingParams(),
-                getSchemeId());
+                                                getSchemeId());
         }
 
         return p;
@@ -204,11 +209,10 @@ class CryptoContextImpl : public Serializable {
 
     template <typename Value1, typename Value2>
     static Plaintext MakePlaintext(PlaintextEncodings encoding, CryptoContext<Element> cc, const Value1& value,
-        const Value2& value2) {
+                                   const Value2& value2) {
         return PlaintextFactory::MakePlaintext(encoding, cc->GetElementParams(), cc->GetEncodingParams(), value,
-            value2);
+                                               value2);
     }
-
 
 protected:
     // crypto parameters used for this context
@@ -330,9 +334,9 @@ protected:
         }
     }
 
-public:
     PrivateKey<Element> privateKey;
 
+public:
     /**
    * This stores the private key in the crypto context.
    * This is only intended for debugging and should not be
@@ -515,7 +519,26 @@ public:
    * @return true on success
    */
     template <typename ST>
-    static bool SerializeEvalMultKey(std::ostream& ser, const ST& sertype, std::string id = "");
+    static bool SerializeEvalMultKey(std::ostream& ser, const ST& sertype, std::string id = "") {
+        std::map<std::string, std::vector<EvalKey<Element>>>* smap;
+        std::map<std::string, std::vector<EvalKey<Element>>> omap;
+
+        if (id.length() == 0) {
+            smap = &GetAllEvalMultKeys();
+        }
+        else {
+            const auto k = GetAllEvalMultKeys().find(id);
+
+            if (k == GetAllEvalMultKeys().end())
+                return false;  // no such id
+
+            smap           = &omap;
+            omap[k->first] = k->second;
+        }
+
+        Serial::Serialize(*smap, ser, sertype);
+        return true;
+    }
 
     /**
    * SerializeEvalMultKey for all EvalMultKeys made in a given context
@@ -2496,7 +2519,57 @@ public:
    * @return the decoding result.
    */
     DecryptResult MultipartyDecryptFusion(const std::vector<Ciphertext<Element>>& partialCiphertextVec,
-                                          Plaintext* plaintext) const;
+                                          Plaintext* plaintext) const {
+        std::string datatype = demangle(typeid(Element).name());
+        OPENFHE_THROW(config_error, std::string(__func__) + " is not implemented for " + datatype);
+        // This function is commented out temporarily. It is used for DCRTPoly only
+        // DecryptResult result;
+
+        // // Make sure we're processing ciphertexts.
+        // size_t last_ciphertext = partialCiphertextVec.size();
+        // if (last_ciphertext < 1)
+        //     return result;
+
+        // for (size_t i = 0; i < last_ciphertext; i++) {
+        //     if (partialCiphertextVec[i] == nullptr || Mismatched(partialCiphertextVec[i]->GetCryptoContext()))
+        //         OPENFHE_THROW(config_error,
+        //                       "A ciphertext passed to MultipartyDecryptFusion was not "
+        //                       "generated with this crypto context");
+        //     if (partialCiphertextVec[i]->GetEncodingType() != partialCiphertextVec[0]->GetEncodingType())
+        //         OPENFHE_THROW(type_error,
+        //                       "Ciphertexts passed to MultipartyDecryptFusion have "
+        //                       "mismatched encoding types");
+        // }
+
+        // // determine which type of plaintext that you need to decrypt into
+        // Plaintext decrypted =
+        //     GetPlaintextForDecrypt(partialCiphertextVec[0]->GetEncodingType(),
+        //                            partialCiphertextVec[0]->GetElements()[0].GetParams(), this->GetEncodingParams());
+
+        // if ((partialCiphertextVec[0]->GetEncodingType() == CKKS_PACKED_ENCODING) &&
+        //     (typeid(Element) != typeid(NativePoly)))
+        //     result = GetScheme()->MultipartyDecryptFusion(partialCiphertextVec, &decrypted->GetElement<Poly>());
+        // else
+        //     result = GetScheme()->MultipartyDecryptFusion(partialCiphertextVec, &decrypted->GetElement<NativePoly>());
+
+        // if (result.isValid == false)
+        //     return result;
+
+        // if (partialCiphertextVec[0]->GetEncodingType() == CKKS_PACKED_ENCODING) {
+        //     auto decryptedCKKS = std::dynamic_pointer_cast<CKKSPackedEncoding>(decrypted);
+        //     decryptedCKKS->SetSlots(partialCiphertextVec[0]->GetSlots());
+        //     const auto cryptoParamsCKKS = std::dynamic_pointer_cast<CryptoParametersRNS>(this->GetCryptoParameters());
+        //     decryptedCKKS->Decode(partialCiphertextVec[0]->GetNoiseScaleDeg(),
+        //                           partialCiphertextVec[0]->GetScalingFactor(), cryptoParamsCKKS->GetScalingTechnique());
+        // }
+        // else {
+        //     decrypted->Decode();
+        // }
+
+        // *plaintext = std::move(decrypted);
+
+        // return result;
+    }
 
     /**
    * Threshold FHE: Generates a joined evaluation key
@@ -2711,7 +2784,10 @@ public:
    * @return the secret shares of the secret key sk.
    */
     std::unordered_map<uint32_t, Element> ShareKeys(const PrivateKey<Element>& sk, usint N, usint threshold,
-                                                    usint index, const std::string& shareType) const;
+                                                    usint index, const std::string& shareType) const {
+        std::string datatype = demangle(typeid(Element).name());
+        OPENFHE_THROW(config_error, std::string(__func__) + " is not implemented for " + datatype);
+    }
 
     /**
    * Threshold FHE: Adds two  partial evaluation keys for multiplication
@@ -2811,6 +2887,14 @@ protected:
     std::vector<usint> m_autoIdxList;
 };
 
+// Member function specializations. Their implementations are in cryptocontext.cpp
+template <>
+DecryptResult CryptoContextImpl<DCRTPoly>::MultipartyDecryptFusion(
+    const std::vector<Ciphertext<DCRTPoly>>& partialCiphertextVec, Plaintext* plaintext) const;
+template <>
+std::unordered_map<uint32_t, DCRTPoly> CryptoContextImpl<DCRTPoly>::ShareKeys(const PrivateKey<DCRTPoly>& sk, usint N,
+                                                                              usint threshold, usint index,
+                                                                              const std::string& shareType) const;
 }  // namespace lbcrypto
 
 #endif /* SRC_PKE_CRYPTOCONTEXT_H_ */
