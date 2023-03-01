@@ -45,8 +45,8 @@
 
 namespace lbcrypto {
 
-EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGen(const PrivateKey<DCRTPoly> oldKey,
-                                                const PrivateKey<DCRTPoly> newKey) const {
+EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGenInternal(const PrivateKey<DCRTPoly> oldKey,
+                                                        const PrivateKey<DCRTPoly> newKey) const {
     EvalKeyRelin<DCRTPoly> ek = std::make_shared<EvalKeyRelinImpl<DCRTPoly>>(newKey->GetCryptoContext());
 
     const auto cryptoParams = std::dynamic_pointer_cast<CryptoParametersRNS>(newKey->GetCryptoParameters());
@@ -123,12 +123,14 @@ EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGen(const PrivateKey<DCRTPoly> oldKe
 
     ek->SetAVector(std::move(av));
     ek->SetBVector(std::move(bv));
+    ek->SetKeyTag(newKey->GetKeyTag());
 
     return ek;
 }
 
-EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGen(const PrivateKey<DCRTPoly> oldKey, const PrivateKey<DCRTPoly> newKey,
-                                                const EvalKey<DCRTPoly> ekPrev) const {
+EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGenInternal(const PrivateKey<DCRTPoly> oldKey,
+                                                        const PrivateKey<DCRTPoly> newKey,
+                                                        const EvalKey<DCRTPoly> ekPrev) const {
     EvalKeyRelin<DCRTPoly> ek(std::make_shared<EvalKeyRelinImpl<DCRTPoly>>(newKey->GetCryptoContext()));
 
     const auto cryptoParams = std::dynamic_pointer_cast<CryptoParametersRNS>(newKey->GetCryptoParameters());
@@ -177,7 +179,7 @@ EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGen(const PrivateKey<DCRTPoly> oldKe
 
     for (usint part = 0; part < numPartQ; part++) {
         DCRTPoly a = ekPrev == nullptr ? DCRTPoly(dug, paramsQP, Format::EVALUATION) :  // single-key HE
-                         ekPrev->GetAVector()[part];                                    // threshold HE
+                                         ekPrev->GetAVector()[part];                                    // threshold HE
         DCRTPoly e(dgg, paramsQP, Format::EVALUATION);
         DCRTPoly b(paramsQP, Format::EVALUATION, true);
 
@@ -206,12 +208,12 @@ EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGen(const PrivateKey<DCRTPoly> oldKe
 
     ek->SetAVector(std::move(av));
     ek->SetBVector(std::move(bv));
-
+    ek->SetKeyTag(newKey->GetKeyTag());
     return ek;
 }
 
-EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGen(const PrivateKey<DCRTPoly> oldKey,
-                                                const PublicKey<DCRTPoly> newKey) const {
+EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGenInternal(const PrivateKey<DCRTPoly> oldKey,
+                                                        const PublicKey<DCRTPoly> newKey) const {
     EvalKeyRelin<DCRTPoly> ek = std::make_shared<EvalKeyRelinImpl<DCRTPoly>>(newKey->GetCryptoContext());
 
     const auto cryptoParams = std::dynamic_pointer_cast<CryptoParametersRNS>(newKey->GetCryptoParameters());
@@ -288,6 +290,7 @@ EvalKey<DCRTPoly> KeySwitchHYBRID::KeySwitchGen(const PrivateKey<DCRTPoly> oldKe
 
     ek->SetAVector(std::move(av));
     ek->SetBVector(std::move(bv));
+    ek->SetKeyTag(newKey->GetKeyTag());
 
     return ek;
 }
@@ -474,11 +477,11 @@ std::shared_ptr<std::vector<DCRTPoly>> KeySwitchHYBRID::EvalKeySwitchPrecomputeC
 
         uint32_t sizePartQl = partsCt[part].GetNumOfElements();
         partsCtCompl[part]  = partCtClone.ApproxSwitchCRTBasis(
-            cryptoParams->GetParamsPartQ(part), cryptoParams->GetParamsComplPartQ(sizeQl - 1, part),
-            cryptoParams->GetPartQlHatInvModq(part, sizePartQl - 1),
-            cryptoParams->GetPartQlHatInvModqPrecon(part, sizePartQl - 1),
-            cryptoParams->GetPartQlHatModp(sizeQl - 1, part),
-            cryptoParams->GetmodComplPartqBarrettMu(sizeQl - 1, part));
+             cryptoParams->GetParamsPartQ(part), cryptoParams->GetParamsComplPartQ(sizeQl - 1, part),
+             cryptoParams->GetPartQlHatInvModq(part, sizePartQl - 1),
+             cryptoParams->GetPartQlHatInvModqPrecon(part, sizePartQl - 1),
+             cryptoParams->GetPartQlHatModp(sizeQl - 1, part),
+             cryptoParams->GetmodComplPartqBarrettMu(sizeQl - 1, part));
 
         partsCtCompl[part].SetFormat(Format::EVALUATION);
 
