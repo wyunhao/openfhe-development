@@ -138,7 +138,7 @@ void BinFHEContext::GenerateBinFHEContext(BINFHE_PARAMSET set, BINFHE_METHOD met
         { MEDIUM,          { 28,     2048,         422, 1024, 1 << 14, STD_DEV, 1 << 7,    1 << 10,  32 } },
         { STD128_AP,       { 27,     2048,         512, 1024, 1 << 14, STD_DEV, 1 << 7,    1 <<  9,  32 } },
         { STD128_APOPT,    { 27,     2048,         502, 1024, 1 << 14, STD_DEV, 1 << 7,    1 <<  9,  32 } },
-        { STD128,          { 27,     2048,         512, 1024, 1 << 14, STD_DEV, 1 << 7,    1 <<  7,  32 } },
+        { STD128,          { 35,     2048,        1024, 4096, 1 << 14, STD_DEV, 1 << 7,    1 <<  7,  32 } },
         { STD128_OPT,      { 27,     2048,         502, 1024, 1 << 14, STD_DEV, 1 << 7,    1 <<  7,  32 } },
         { STD192,          { 37,     4096,        1024, 1024, 1 << 19, STD_DEV,     28,    1 << 13,  32 } },
         { STD192_OPT,      { 37,     4096,         805, 1024, 1 << 15, STD_DEV,     32,    1 << 13,  32 } },
@@ -180,7 +180,7 @@ void BinFHEContext::GenerateBinFHEContext(BINFHE_PARAMSET set, BINFHE_METHOD met
 
 LWEPrivateKey BinFHEContext::KeyGen() const {
     auto& LWEParams = m_params->GetLWEParams();
-    return m_LWEscheme->KeyGen(LWEParams->Getn(), LWEParams->GetqKS());
+    return m_LWEscheme->KeyGenRandom(LWEParams->Getn(), LWEParams->GetqKS());
 }
 
 LWEPrivateKey BinFHEContext::KeyGenN() const {

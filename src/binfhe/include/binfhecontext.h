@@ -334,6 +334,9 @@ public:
         return 128;
     }
 
+    // Struct containing the bootstrapping keys
+    RingGSWBTKey m_BTKey = {0};
+
 private:
     // Shared pointer to Ring GSW + LWE parameters
     std::shared_ptr<BinFHECryptoParams> m_params = nullptr;
@@ -343,9 +346,6 @@ private:
 
     // Shared pointer to the underlying RingGSW/RLWE scheme
     std::shared_ptr<BinFHEScheme> m_binfhescheme = nullptr;
-
-    // Struct containing the bootstrapping keys
-    RingGSWBTKey m_BTKey = {0};
 
     // Struct containing the bootstrapping keys
     std::map<uint32_t, RingGSWBTKey> m_BTKey_map;

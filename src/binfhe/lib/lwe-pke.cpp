@@ -35,6 +35,8 @@
 #include "math/discreteuniformgenerator.h"
 #include "math/ternaryuniformgenerator.h"
 
+using namespace std;
+
 namespace lbcrypto {
 // the main rounding operation used in ModSwitch (as described in Section 3 of
 // https://eprint.iacr.org/2014/816) The idea is that Round(x) = 0.5 + Floor(x)
@@ -48,6 +50,13 @@ NativeInteger LWEEncryptionScheme::RoundqQ(const NativeInteger& v, const NativeI
 LWEPrivateKey LWEEncryptionScheme::KeyGen(usint size, const NativeInteger& modulus) const {
     TernaryUniformGeneratorImpl<NativeVector> tug;
     return std::make_shared<LWEPrivateKeyImpl>(LWEPrivateKeyImpl(tug.GenerateVector(size, modulus)));
+}
+
+LWEPrivateKey LWEEncryptionScheme::KeyGenRandom(usint size, const NativeInteger& modulus) const {
+    // cout << "Generate random sk for blind rotation with mod: " << modulus.ConvertToInt() << endl;
+    DiscreteUniformGeneratorImpl<NativeVector> dug;
+    dug.SetModulus(modulus);
+    return std::make_shared<LWEPrivateKeyImpl>(LWEPrivateKeyImpl(dug.GenerateVector(size)));
 }
 
 // classical LWE encryption
@@ -119,7 +128,10 @@ void LWEEncryptionScheme::Decrypt(const std::shared_ptr<LWECryptoParams> params,
     // *result = (r.MultiplyAndRound(NativeInteger(4),q)).ConvertToInt();
     // But the method below is a more efficient way of doing the rounding
     // the idea is that Round(4/q x) = q/8 + Floor(4/q x)
+
+    cout << "r: " << r.ConvertToInt() << ", with mod: " << mod << endl;
     r.ModAddFastEq((mod / (p * 2)), mod);
+
     *result = ((NativeInteger(p) * r) / mod).ConvertToInt();
 
 #if defined(BINFHE_DEBUG)
@@ -277,8 +289,7 @@ LWECiphertext LWEEncryptionScheme::KeySwitch(const std::shared_ptr<LWECryptoPara
             b.ModSubFastEq(K->GetElementsB()[i][a0][j], Q);
         }
     }
-
-    return std::make_shared<LWECiphertextImpl>(LWECiphertextImpl(std::move(a), b));
+    return std::make_shared<LWECiphertextImpl>(std::move(a), std::move(b));
 }
 
 // noiseless LWE embedding

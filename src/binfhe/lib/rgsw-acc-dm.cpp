@@ -33,33 +33,43 @@
 
 #include <string>
 
+using namespace std;
+
 namespace lbcrypto {
 
 // Key generation as described in Section 4 of https://eprint.iacr.org/2014/816
 RingGSWACCKey RingGSWAccumulatorDM::KeyGenAcc(const std::shared_ptr<RingGSWCryptoParams> params,
                                               const NativePoly& skNTT, ConstLWEPrivateKey LWEsk) const {
-    auto sv     = LWEsk->GetElement();
-    int32_t mod = sv.GetModulus().ConvertToInt();
+    DiscreteUniformGeneratorImpl<NativeVector> dug;
+    dug.SetModulus(LWEsk->GetElement().GetModulus());
+    NativeVector rand_sk = dug.GenerateVector(LWEsk->GetElement().GetLength());
+        
+    int32_t mod = LWEsk->GetElement().GetModulus().ConvertToInt();
+
+    cout << "this mod in KeyGenAcc: " << mod << endl;
 
     int32_t modHalf = mod >> 1;
 
     uint32_t baseR                            = params->GetBaseR();
     const std::vector<NativeInteger>& digitsR = params->GetDigitsR();
-    uint32_t n                                = sv.GetLength();
+    uint32_t n                                = LWEsk->GetElement().GetLength();
     RingGSWACCKey ek                          = std::make_shared<RingGSWACCKeyImpl>(n, baseR, digitsR.size());
 
 #pragma omp parallel for
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = 1; j < baseR; ++j) {
             for (size_t k = 0; k < digitsR.size(); ++k) {
-                int32_t s = (int32_t)sv[i].ConvertToInt();
+                int32_t s = (int32_t)rand_sk[i].ConvertToInt();
+                // cout << s << " ";
                 if (s > modHalf) {
                     s -= mod;
                 }
 
                 (*ek)[i][j][k] = KeyGenDM(params, skNTT, s * j * (int32_t)digitsR[k].ConvertToInt());
             }
+            // cout << endl;
         }
+        // cout << "\n----------\n";
     }
 
     return ek;

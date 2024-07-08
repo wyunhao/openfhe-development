@@ -59,6 +59,8 @@ public:
    */
     LWEPrivateKey KeyGen(usint size, const NativeInteger& modulus) const;
 
+    LWEPrivateKey KeyGenRandom(usint size, const NativeInteger& modulus) const;
+
     /**
    * Encrypts a bit using a secret key (symmetric key encryption)
    *

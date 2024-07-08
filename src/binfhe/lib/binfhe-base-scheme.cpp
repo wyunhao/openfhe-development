@@ -33,12 +33,14 @@
 
 #include <string>
 
+using namespace std;
+
 namespace lbcrypto {
 
 // wrapper for KeyGen methods
 RingGSWBTKey BinFHEScheme::KeyGen(const std::shared_ptr<BinFHECryptoParams> params, ConstLWEPrivateKey LWEsk) const {
     auto& LWEParams        = params->GetLWEParams();
-    ConstLWEPrivateKey skN = LWEscheme->KeyGen(LWEParams->GetN(), LWEParams->GetQ());
+    ConstLWEPrivateKey skN = LWEscheme->KeyGenRandom(LWEParams->GetN(), LWEParams->GetQ());
 
     RingGSWBTKey ek;
     ek.KSkey = LWEscheme->KeySwitchGen(LWEParams, LWEsk, skN);
@@ -46,6 +48,7 @@ RingGSWBTKey BinFHEScheme::KeyGen(const std::shared_ptr<BinFHECryptoParams> para
     auto& RGSWParams   = params->GetRingGSWParams();
     auto polyParams    = RGSWParams->GetPolyParams();
     NativePoly skNPoly = NativePoly(polyParams);
+    // cout << "Check SK elements: " << skN->GetElement() << endl;
     skNPoly.SetValues(skN->GetElement(), Format::COEFFICIENT);
     skNPoly.SetFormat(Format::EVALUATION);
 
