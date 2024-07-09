@@ -41,47 +41,109 @@ using namespace lbcrypto;
 int main() {
     // Sample Program: Step 1: Set CryptoContext
 
-    int party_size = 2;
+    BinFHEContext context = BinFHEContext();
+    context.GenerateBinFHEContext(STD128, AP);
+    LWEPrivateKey sk = context.KeyGen();
+    context.BTKeyGen(sk);
+  
 
-    vector<BinFHEContext> cc_list(party_size);
-    vector<LWEPrivateKey> sk_list(party_size);
+    auto& RGSWParams = context.m_params->GetRingGSWParams();
+    auto& LWEParams  = context.m_params->GetLWEParams();
+    auto polyParams  = RGSWParams->GetPolyParams();
 
-    for (int i = 0; i < party_size; i++) {
-      cc_list[i] = BinFHEContext();
-      cc_list[i].GenerateBinFHEContext(STD128, AP);
-      sk_list[i] = cc_list[i].KeyGen();
+
+    uint32_t N       = LWEParams->GetN();
+    NativeInteger Q  = LWEParams->GetQ();
+    NativeVector m(N, Q);
+    for (int i = 0; i < (int) N; i++) {
+      m[i] = 0;
     }
+    m[1] = 1;
+    std::vector<NativePoly> res(2);
+    // no need to do NTT as all coefficients of this poly are zero
+    res[0] = NativePoly(polyParams, Format::EVALUATION, true);
+    res[1] = NativePoly(polyParams, Format::COEFFICIENT, false);
+    res[1].SetValues(std::move(m), Format::COEFFICIENT);
+    res[1].SetFormat(Format::EVALUATION);
 
-    std::cout << "Generating the bootstrapping keys..." << std::endl;
+    // main accumulation computation
+    // the following loop is the bottleneck of bootstrapping/binary gate
+    // evaluation
+    auto acc = std::make_shared<RLWECiphertextImpl>(std::move(res));
 
-    // Generate the bootstrapping keys (refresh and switching keys)
+    std::vector<NativePoly>& accVec = acc->GetElements();
 
-    for (int i = 0; i < party_size; i++) {
-      cc_list[i].BTKeyGen(sk_list[i]);
-    }
+    accVec[0] = accVec[0].Transpose();
+    accVec[0].SetFormat(Format::COEFFICIENT);
+    accVec[1].SetFormat(Format::COEFFICIENT);
 
-    std::cout << "Completed the key generation." << std::endl;
+    // we add Q/8 to "b" to to map back to Q/4 (i.e., mod 2) arithmetic.
+    
+    NativeInteger b(0); // = Q / NativeInteger(8) + 1;
+    b.ModAddFastEq(accVec[1][0], Q);
 
-    // Sample Program: Step 3: Encryption
+    auto ctExt = std::make_shared<LWECiphertextImpl>(std::move(accVec[0].GetValues()), std::move(b));
+    // Modulus switching to a middle step Q'
+    // auto ctMS = context.GetLWEScheme()->ModSwitch(LWEParams->GetqKS(), ctExt);
+    // // Key switching
+    // auto ctKS = context.GetLWEScheme()->KeySwitch(LWEParams, context.m_BTKey.KSkey, ctMS);
+    
+    
+    // // Modulus switching
+    // auto ct1 = context.Encrypt(sk, 1);
+    // LWECiphertext final_lwe = context.GetLWEScheme()->ModSwitch(ct1->GetModulus(), ctKS);
 
-    // Encrypt two ciphertexts representing Boolean True (1)
-    // By default, freshly encrypted ciphertexts are bootstrapped.
-    // If you wish to get a fresh encryption without bootstrapping, write
-    // auto   ct1 = cc.Encrypt(sk, 1, FRESH);
-    auto ct1 = cc_list[0].Encrypt(sk_list[0], 1);
-    auto ct2 = cc_list[0].Encrypt(sk_list[0], 1);
 
-    // Sample Program: Step 4: Evaluation
-
-    // Compute (1 AND 1) = 1; Other binary gate options are OR, NAND, and NOR
-
-    auto ctResult = cc_list[0].EvalBinGate(AND, ct1, ct2);
 
     LWEPlaintext result;
+    context.Decrypt(sk, ctExt, &result);
 
-    cc_list[0].Decrypt(sk_list[0], ctResult, &result);
 
-    std::cout << "Result of encrypted computation of (1 AND 1) OR (1 AND (NOT 1)) = " << result << std::endl;
+    std::cout << "Result = " << result << std::endl;
+
+
+
+    // int party_size = 2;
+
+    // vector<BinFHEContext> cc_list(party_size);
+    // vector<LWEPrivateKey> sk_list(party_size);
+
+    // for (int i = 0; i < party_size; i++) {
+    //   cc_list[i] = BinFHEContext();
+    //   cc_list[i].GenerateBinFHEContext(STD128, AP);
+    //   sk_list[i] = cc_list[i].KeyGen();
+    // }
+
+    // std::cout << "Generating the bootstrapping keys..." << std::endl;
+
+    // // Generate the bootstrapping keys (refresh and switching keys)
+
+    // for (int i = 0; i < party_size; i++) {
+    //   cc_list[i].BTKeyGen(sk_list[i]);
+    // }
+
+    // std::cout << "Completed the key generation." << std::endl;
+
+    // // Sample Program: Step 3: Encryption
+
+    // // Encrypt two ciphertexts representing Boolean True (1)
+    // // By default, freshly encrypted ciphertexts are bootstrapped.
+    // // If you wish to get a fresh encryption without bootstrapping, write
+    // // auto   ct1 = cc.Encrypt(sk, 1, FRESH);
+    // auto ct1 = cc_list[0].Encrypt(sk_list[0], 1);
+    // auto ct2 = cc_list[0].Encrypt(sk_list[0], 1);
+
+    // // Sample Program: Step 4: Evaluation
+
+    // // Compute (1 AND 1) = 1; Other binary gate options are OR, NAND, and NOR
+
+    // auto ctResult = cc_list[0].EvalBinGate(AND, ct1, ct2);
+
+    // LWEPlaintext result;
+
+    // cc_list[0].Decrypt(sk_list[0], ctResult, &result);
+
+    // std::cout << "Result of encrypted computation of (1 AND 1) OR (1 AND (NOT 1)) = " << result << std::endl;
 
     return 0;
 }

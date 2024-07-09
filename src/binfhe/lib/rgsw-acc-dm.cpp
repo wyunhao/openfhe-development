@@ -142,7 +142,7 @@ RingGSWEvalKey RingGSWAccumulatorDM::KeyGenDM(const std::shared_ptr<RingGSWCrypt
         }
     }
 
-    // 3*digitsG2 NTTs are called
+    // // 3*digitsG2 NTTs are called
     result->SetFormat(Format::EVALUATION);
     for (size_t i = 0; i < digitsG2; ++i) {
         tempA[i].SetFormat(Format::EVALUATION);

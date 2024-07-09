@@ -96,8 +96,26 @@ LWECiphertext BinFHEScheme::EvalBinGate(const std::shared_ptr<BinFHECryptoParams
         // the accumulator result is encrypted w.r.t. the transposed secret key
         // we can transpose "a" to get an encryption under the original secret key
         accVec[0] = accVec[0].Transpose();
+        // accVec[0].SetFormat(Format::EVALUATION);
+        // accVec[1].SetFormat(Format::EVALUATION);
+
+        // std::cout << "Check RLWE ciphertext, we want a binary format ideally...\n";
+        // std::cout << accVec[0].GetValues() << std::endl;
+
         accVec[0].SetFormat(Format::COEFFICIENT);
         accVec[1].SetFormat(Format::COEFFICIENT);
+
+        std::cout << "Check RLWE ciphertext, we want a binary format ideally...\n";
+        std::cout << accVec[0].GetValues() << std::endl;
+        // for (int i = 0; i < (int) accVec[0].GetValues().size(); i++) {
+        //     std::cout << accVec[0][i].ConvertToInt() << " ";
+        // }
+        // std::cout << std::endl;
+
+        // for (int i = 0; i < (int) accVec[0].GetValues().size(); i++) {
+        //     std::cout << accVec[1][i].ConvertToInt() << " ";
+        // }
+        // std::cout << std::endl;
 
         // we add Q/8 to "b" to to map back to Q/4 (i.e., mod 2) arithmetic.
         auto& LWEParams = params->GetLWEParams();

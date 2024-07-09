@@ -337,10 +337,11 @@ public:
     // Struct containing the bootstrapping keys
     RingGSWBTKey m_BTKey = {0};
 
-private:
     // Shared pointer to Ring GSW + LWE parameters
     std::shared_ptr<BinFHECryptoParams> m_params = nullptr;
 
+private:
+    
     // Shared pointer to the underlying additive LWE scheme
     std::shared_ptr<LWEEncryptionScheme> m_LWEscheme = nullptr;
 
